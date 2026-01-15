@@ -1,0 +1,50 @@
+services:
+  kufar-bot:
+    build: .
+    container_name: kufar-bot
+    env_file:
+      - .env
+    environment:
+      - PYTHONUNBUFFERED=1
+    ports:
+      - "${SERVER_PORT}:${SERVER_PORT}"
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+    networks:
+      - bot-network
+
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n-service
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    env_file:
+      - .env
+    environment:
+      - N8N_PORT=5678
+    volumes:
+      - n8n_data:/home/node/.n8n
+    networks:
+      - bot-network
+
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    restart: always
+    ports:
+      - "9000:9000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+    networks:
+      - bot-network
+
+networks:
+  bot-network:
+    driver: bridge
+
+volumes:
+  n8n_data:
+  portainer_data:

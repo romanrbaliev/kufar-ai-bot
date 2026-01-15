@@ -1,0 +1,6 @@
+.env
+data/session.json
+data/last_messages.json
+__pycache__/
+*.pyc
+.DS_Store

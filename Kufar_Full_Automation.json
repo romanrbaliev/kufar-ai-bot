@@ -1,0 +1,232 @@
+{
+  "name": "Kufar_Full_Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://kufar-bot:8000/send_message",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "chat_id",
+              "value": "={{ $('Filter').item.json.id }}"
+            },
+            {
+              "name": "text",
+              "value": "={{ $json.output }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "2a5bd1cb-84ee-41d7-aca3-86dd265561f1",
+      "name": "HTTP Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1328,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "body.chats",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        528,
+        80
+      ],
+      "id": "43b8d2a8-595c-4364-8c76-f495416dc95f",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "kufar_updates",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        304,
+        80
+      ],
+      "id": "22d8c214-d355-4755-9133-666c86746aa4",
+      "name": "Webhook",
+      "webhookId": "7832eb50-cae0-4efe-b93a-db914c87ecd6"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "dea26ded-9d59-47d1-93aa-f4513d388be8",
+              "leftValue": "={{ $json.history }}",
+              "rightValue": "Вы: [^\\n]+$",
+              "operator": {
+                "type": "string",
+                "operation": "notRegex"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        736,
+        80
+      ],
+      "id": "0693fdf0-cdc2-4760-9ba0-a386c3cf3907",
+      "name": "Filter"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Ты — обычный человек, который продает или покупает вещи на Куфаре. Твоя задача — ответить на последнее сообщение в чате максимально естественно и кратко.\n\nГЛАВНЫЕ ПРАВИЛА:\n\nПиши как в мессенджере: коротко, без лишних знаков препинания и заглавных букв там, где это не нужно.\n\nКАТЕГОРИЧЕСКИ ЗАПРЕЩЕНО пересказывать условия сделки, называть цену или полное название товара, если тебя об этом не спросили прямо сейчас.\n\nЕсли в переписке уже есть договоренность (время/место), просто напиши: «Хорошо, договорились», «Ок, буду» или «По рукам».\n\nИзбегай слов: «сотрудничество», «согласовано», «подтверждаю», «данный товар».\n\nПиши ТОЛЬКО текст сообщения.\n\nКонтекст для понимания (НЕ используй эти слова в ответе просто так): Товар: {{ $json.product_name }} Цена: {{ $json.product_price }}\n\nИстория переписки: {{ $json.history }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        944,
+        80
+      ],
+      "id": "a8a03348-347f-46e4-b2b1-b79c8c568fc2",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.id }}",
+        "contextWindowLength": 20
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        1040,
+        288
+      ],
+      "id": "f86bbeab-efbd-440c-ab04-e6c4ea5bd086",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "model": "meta-llama/llama-3.3-70b-instruct:free",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        944,
+        256
+      ],
+      "id": "701afee9-41b2-4bbc-8ef0-588ce1479848",
+      "name": "OpenRouter",
+      "credentials": {
+        "openRouterApi": {
+          "id": "xmgHuAvVKD2bcPyk",
+          "name": "OpenRouter account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "HTTP Request": {
+      "main": [
+        []
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "68241caa-0b9b-4f78-83da-139ecc579d36",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "65b042282034b22edc38d9e7cba40e5a3a9c8ab9175c2e7af678fb6dad093037"
+  },
+  "id": "Xv7ZRY6Vv2xDjZJMvb8Uq",
+  "tags": []
+}
